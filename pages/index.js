@@ -119,10 +119,21 @@ export default function Home() {
               <strong>{formatEUR(data.TotalEaR)}</strong>
             </div>
 
-            <div className="metric">
-              <span>ESF total correlacionado</span>
-              <strong>{formatEUR(data.TotalESF)}</strong>
-            </div>
+         <div className="metric">
+  <span>Ratio EaR / VaR</span>
+  <strong>{data.RatioEaRVaRPct?.toFixed(2)}%</strong>
+  <small>Valor absoluto: {data.RatioEaRVaRAbs?.toFixed(4)}</small>
+</div>
+
+<div className="metric">
+  <span>ESF- total correlacionado</span>
+  <strong>{formatEUR(data.TotalESFMinus)}</strong>
+</div>
+
+<div className="metric">
+  <span>ESF+ total correlacionado</span>
+  <strong>{formatEUR(data.TotalESFPlus)}</strong>
+</div>
           </div>
 
           <h3>VaR individual por activo</h3>
