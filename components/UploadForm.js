@@ -3,55 +3,44 @@ import { useState } from "react";
 export default function UploadForm({ setData, setError }) {
   const [file, setFile] = useState(null);
   const [code, setCode] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [alpha, setAlpha] = useState("0.95");
+  const [method, setMethod] = useState("historical_original");
 
   const handleSubmit = async () => {
     setError("");
     setData(null);
 
-    if (!code.trim()) {
-      setError("Introduce un código de acceso.");
-      return;
-    }
-
     if (!file) {
-      setError("Sube un archivo Excel.");
+      setError("Debes subir un archivo Excel.");
       return;
     }
 
-    setLoading(true);
+    const res = await fetch("/api/var", {
+      method: "POST",
+      headers: {
+        "x-access-code": code,
+        "x-alpha": alpha,
+        "x-method": method
+      },
+      body: file
+    });
 
-    try {
-      const res = await fetch("/api/var", {
-        method: "POST",
-        headers: {
-          "x-access-code": code.trim()
-        },
-        body: file
-      });
+    const data = await res.json();
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error || "Error calculando VaR.");
-        return;
-      }
-
-      setData(data);
-    } catch (error) {
-      setError("No se pudo procesar el archivo.");
-    } finally {
-      setLoading(false);
+    if (!res.ok) {
+      setError(data.error || "Error calculando VaR.");
+      return;
     }
+
+    setData(data);
   };
 
   return (
     <div className="card">
       <label>Código de acceso</label>
       <input
-        type="password"
-        placeholder="Ej. CLIENTE2026"
-        value={code}
+        type="text"
+        placeholder="CLIENTE2026"
         onChange={e => setCode(e.target.value)}
       />
 
@@ -59,12 +48,24 @@ export default function UploadForm({ setData, setError }) {
       <input
         type="file"
         accept=".xlsx,.xls"
-        onChange={e => setFile(e.target.files?.[0] || null)}
+        onChange={e => setFile(e.target.files[0])}
       />
 
-      <button onClick={handleSubmit} disabled={loading}>
-        {loading ? "Calculando..." : "Calcular VaR"}
-      </button>
+      <label>Percentil</label>
+      <select value={alpha} onChange={e => setAlpha(e.target.value)}>
+        <option value="0.90">90%</option>
+        <option value="0.95">95%</option>
+        <option value="0.975">97,5%</option>
+        <option value="0.99">99%</option>
+      </select>
+
+      <label>Método</label>
+      <select value={method} onChange={e => setMethod(e.target.value)}>
+        <option value="historical_original">Simulación histórica - Código original</option>
+        <option value="historical_standard">Simulación histórica - ESF estándar</option>
+      </select>
+
+      <button onClick={handleSubmit}>Calcular VaR</button>
     </div>
   );
 }
