@@ -103,9 +103,9 @@ export default function Home() {
             <div className="metric">
               <span>Método</span>
               <strong>
-                {data.method === "historical_original"
-                  ? "Histórico - Código original"
-                  : "Histórico - ESF estándar"}
+             {data.method === "historical"
+  ? "Simulación histórica"
+  : "Paramétrico Normal"}
               </strong>
             </div>
 
