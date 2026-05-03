@@ -4,7 +4,7 @@ export default function UploadForm({ setData, setError }) {
   const [file, setFile] = useState(null);
   const [code, setCode] = useState("");
   const [alpha, setAlpha] = useState("0.95");
-  const [method, setMethod] = useState("historical_original");
+  const [method, setMethod] = useState("historical");
 
   const handleSubmit = async () => {
     setError("");
