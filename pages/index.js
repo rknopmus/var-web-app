@@ -3,14 +3,16 @@ import UploadForm from "../components/UploadForm";
 import {
   Chart as ChartJS,
   BarElement,
+  BarController,
   LineElement,
+  LineController,
   PointElement,
   CategoryScale,
   LinearScale,
   Tooltip,
   Legend
 } from "chart.js";
-import { Bar } from "react-chartjs-2";
+import { Chart } from "react-chartjs-2";
 
 ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
