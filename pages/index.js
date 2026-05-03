@@ -1,20 +1,36 @@
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import UploadForm from "../components/UploadForm";
+
 import {
   Chart as ChartJS,
-  BarElement,
   BarController,
-  LineElement,
+  BarElement,
   LineController,
+  LineElement,
   PointElement,
   CategoryScale,
   LinearScale,
   Tooltip,
   Legend
 } from "chart.js";
-import { Chart } from "react-chartjs-2";
 
-ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
+ChartJS.register(
+  BarController,
+  BarElement,
+  LineController,
+  LineElement,
+  PointElement,
+  CategoryScale,
+  LinearScale,
+  Tooltip,
+  Legend
+);
+
+const Chart = dynamic(
+  () => import("react-chartjs-2").then(mod => mod.Chart),
+  { ssr: false }
+);
 
 function formatEUR(value) {
   if (value === null || value === undefined || isNaN(value)) return "-";
@@ -25,9 +41,15 @@ function formatEUR(value) {
     maximumFractionDigits: 2
   }).format(value);
 }
+
 function buildHistogram(values, bins = 50, varValue, earValue) {
+  if (!values || values.length === 0) return null;
+
   const min = Math.min(...values);
   const max = Math.max(...values);
+
+  if (min === max) return null;
+
   const width = (max - min) / bins;
 
   const labels = [];
@@ -46,6 +68,7 @@ function buildHistogram(values, bins = 50, varValue, earValue) {
   });
 
   function markValue(value, color) {
+    if (value === null || value === undefined || isNaN(value)) return;
     const index = Math.floor((value - min) / width);
     if (index >= 0 && index < bins) {
       colors[index] = color;
@@ -63,6 +86,8 @@ function buildHistogram(values, bins = 50, varValue, earValue) {
   );
 
   const normalCurve = labels.map(x => {
+    if (!std || !isFinite(std)) return 0;
+
     const density =
       (1 / (std * Math.sqrt(2 * Math.PI))) *
       Math.exp(-0.5 * Math.pow((x - mean) / std, 2));
@@ -89,7 +114,7 @@ function buildHistogram(values, bins = 50, varValue, earValue) {
         borderWidth: 2,
         fill: false,
         pointRadius: 0,
-        tension: 0.3
+        tension: 0.25
       }
     ]
   };
@@ -99,9 +124,10 @@ export default function Home() {
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
 
-  const chartData = data
-    ? buildHistogram(data.resultados_total, 50, data.TotalVaR, data.TotalEaR)
-    : null;
+  const chartData =
+    data && data.resultados_total
+      ? buildHistogram(data.resultados_total, 50, data.TotalVaR, data.TotalEaR)
+      : null;
 
   return (
     <main className="container">
@@ -109,8 +135,8 @@ export default function Home() {
       <h2>Roberto Knop</h2>
 
       <p className="subtitle">
-        Carga un Excel con hojas <strong>Precios</strong> y <strong>Posiciones</strong>.
-        La aplicación calcula VaR individual, VaR total correlacionado, EaR y ESF.
+        Carga un Excel con hojas <strong>Precios</strong> y{" "}
+        <strong>Posiciones</strong>.
       </p>
 
       <UploadForm setData={setData} setError={setError} />
@@ -130,9 +156,9 @@ export default function Home() {
             <div className="metric">
               <span>Método</span>
               <strong>
-             {data.method === "historical"
-  ? "Simulación histórica"
-  : "Paramétrico Normal"}
+                {data.method === "historical"
+                  ? "Simulación histórica"
+                  : "Paramétrico Normal"}
               </strong>
             </div>
 
@@ -146,27 +172,27 @@ export default function Home() {
               <strong>{formatEUR(data.TotalEaR)}</strong>
             </div>
 
-         <div className="metric">
-  <span>Ratio EaR / VaR</span>
-  <strong>{data.RatioEaRVaRPct?.toFixed(2)}%</strong>
-  <small>Valor absoluto: {data.RatioEaRVaRAbs?.toFixed(4)}</small>
-</div>
+            <div className="metric">
+              <span>Ratio EaR / VaR</span>
+              <strong>{data.RatioEaRVaRPct?.toFixed(2)}%</strong>
+              <small>Valor absoluto: {data.RatioEaRVaRAbs?.toFixed(4)}</small>
+            </div>
 
-<div className="metric">
-  <span>ESF- total correlacionado</span>
-  <strong>{formatEUR(data.TotalESFMinus)}</strong>
-</div>
+            <div className="metric">
+              <span>ESF- total correlacionado</span>
+              <strong>{formatEUR(data.TotalESFMinus)}</strong>
+            </div>
 
-<div className="metric">
-  <span>ESF+ total correlacionado</span>
-  <strong>{formatEUR(data.TotalESFPlus)}</strong>
-</div>
+            <div className="metric">
+              <span>ESF+ total correlacionado</span>
+              <strong>{formatEUR(data.TotalESFPlus)}</strong>
+            </div>
 
-<div className="metric">
-  <span>Ratio ESF+ / ESF-</span>
-  <strong>{data.RatioESFPct?.toFixed(2)}%</strong>
-  <small>Valor absoluto: {data.RatioESFAbs?.toFixed(4)}</small>
-</div>
+            <div className="metric">
+              <span>Ratio ESF+ / ESF-</span>
+              <strong>{data.RatioESFPct?.toFixed(2)}%</strong>
+              <small>Valor absoluto: {data.RatioESFAbs?.toFixed(4)}</small>
+            </div>
           </div>
 
           <h3>VaR individual por activo</h3>
@@ -196,47 +222,54 @@ export default function Home() {
           </div>
 
           <div className="chart">
-<Bar
-  data={chartData}
-  options={{
-    responsive: true,
-    interaction: {
-      mode: "index",
-      intersect: false
-    },
-    plugins: {
-      legend: {
-        display: true
-      },
-                  tooltip: {
-                    callbacks: {
-                      title: context => `Rango: ${context[0].label}`,
-                      label: context => `Frecuencia: ${context.raw}`
-                    }
-                  }
-                },
-                scales: {
-                  x: {
-                    ticks: {
-                      maxRotation: 90,
-                      minRotation: 90,
-                      autoSkip: true,
-                      maxTicksLimit: 15
+            {chartData ? (
+              <Chart
+                type="bar"
+                data={chartData}
+                options={{
+                  responsive: true,
+                  interaction: {
+                    mode: "index",
+                    intersect: false
+                  },
+                  plugins: {
+                    legend: {
+                      display: true
                     },
-                    title: {
-                      display: true,
-                      text: "Resultado simulado (€)"
+                    tooltip: {
+                      callbacks: {
+                        title: context =>
+                          `Resultado: ${Number(context[0].label).toFixed(2)} €`,
+                        label: context =>
+                          `${context.dataset.label}: ${context.raw.toFixed(2)}`
+                      }
                     }
                   },
-                  y: {
-                    title: {
-                      display: true,
-                      text: "Frecuencia"
+                  scales: {
+                    x: {
+                      ticks: {
+                        maxRotation: 90,
+                        minRotation: 90,
+                        autoSkip: true,
+                        maxTicksLimit: 15
+                      },
+                      title: {
+                        display: true,
+                        text: "Resultado simulado (€)"
+                      }
+                    },
+                    y: {
+                      title: {
+                        display: true,
+                        text: "Frecuencia"
+                      }
                     }
                   }
-                }
-              }}
-            />
+                }}
+              />
+            ) : (
+              <p>No hay datos suficientes para construir el histograma.</p>
+            )}
           </div>
         </section>
       )}
