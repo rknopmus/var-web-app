@@ -246,13 +246,16 @@ export default function Home() {
                     }
                   },
                   scales: {
-                    x: {
-                      ticks: {
-                        maxRotation: 90,
-                        minRotation: 90,
-                        autoSkip: true,
-                        maxTicksLimit: 15
-                      },
+                   x: {
+  ticks: {
+    maxRotation: 90,
+    minRotation: 90,
+    autoSkip: true,
+    maxTicksLimit: 15,
+    callback: function(value) {
+      return Number(this.getLabelForValue(value)).toFixed(2);
+    }
+  },
                       title: {
                         display: true,
                         text: "Resultado simulado (€)"
