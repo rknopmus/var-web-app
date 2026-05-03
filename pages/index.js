@@ -131,9 +131,9 @@ export default function Home() {
 
   return (
     <main className="container">
-      <h1>Aplicación profesional de VaR</h1>
+      <h1>Calculadora de riesgos de mercado</h1>
       <h2>Roberto Knop</h2>
-
+      <h3>(para modelos de valoracion = tipo x cantidad)</h3>
       <p className="subtitle">
         Carga un Excel con hojas <strong>Precios</strong> y{" "}
         <strong>Posiciones</strong>.
