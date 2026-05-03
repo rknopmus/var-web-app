@@ -59,11 +59,11 @@ export default function UploadForm({ setData, setError }) {
         <option value="0.99">99%</option>
       </select>
 
-      <label>Método</label>
-      <select value={method} onChange={e => setMethod(e.target.value)}>
-        <option value="historical_original">Simulación histórica - Código original</option>
-        <option value="historical_standard">Simulación histórica - ESF estándar</option>
-      </select>
+<label>Método</label>
+<select value={method} onChange={e => setMethod(e.target.value)}>
+  <option value="historical">Simulación histórica</option>
+  <option value="parametric_normal">Paramétrico Normal</option>
+</select>
 
       <button onClick={handleSubmit}>Calcular VaR</button>
     </div>
