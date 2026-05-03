@@ -21,7 +21,6 @@ function formatEUR(value) {
     maximumFractionDigits: 2
   }).format(value);
 }
-
 function buildHistogram(values, bins = 50, varValue, earValue) {
   const min = Math.min(...values);
   const max = Math.max(...values);
@@ -32,9 +31,7 @@ function buildHistogram(values, bins = 50, varValue, earValue) {
   const colors = Array(bins).fill("rgba(54, 162, 235, 0.6)");
 
   for (let i = 0; i < bins; i++) {
-    const start = min + i * width;
-    const end = start + width;
-    labels.push(start + width / 2);
+    labels.push(min + i * width + width / 2);
   }
 
   values.forEach(v => {
@@ -43,60 +40,6 @@ function buildHistogram(values, bins = 50, varValue, earValue) {
     if (index < 0) index = 0;
     counts[index]++;
   });
-
-  // 🔴 Marcar VaR y EaR
-  function markValue(value, color) {
-    const index = Math.floor((value - min) / width);
-    if (index >= 0 && index < bins) {
-      colors[index] = color;
-    }
-  }
-
-  markValue(varValue, "rgba(255, 99, 132, 0.9)");
-  markValue(earValue, "rgba(255, 206, 86, 0.9)");
-
-  // 🧮 MEDIA Y DESVIACIÓN
-  const mean =
-    values.reduce((a, b) => a + b, 0) / values.length;
-
-  const std = Math.sqrt(
-    values.reduce((a, b) => a + Math.pow(b - mean, 2), 0) /
-      (values.length - 1)
-  );
-
-  // 📈 Curva normal
-  const normalCurve = labels.map(x => {
-    const density =
-      (1 / (std * Math.sqrt(2 * Math.PI))) *
-      Math.exp(-0.5 * Math.pow((x - mean) / std, 2));
-
-    // Escalado para que encaje con histograma
-    return density * values.length * width;
-  });
-
-  return {
-    labels,
-    datasets: [
-      {
-        type: "bar",
-        label: "Frecuencia",
-        data: counts,
-        backgroundColor: colors,
-        borderWidth: 1
-      },
-      {
-        type: "line",
-        label: "Distribución Normal",
-        data: normalCurve,
-        borderColor: "rgba(220, 38, 38, 1)",
-        borderWidth: 2,
-        fill: false,
-        pointRadius: 0,
-        tension: 0.3
-      }
-    ]
-  };
-}
 
   function markValue(value, color) {
     const index = Math.floor((value - min) / width);
@@ -108,15 +51,41 @@ function buildHistogram(values, bins = 50, varValue, earValue) {
   markValue(varValue, "rgba(255, 99, 132, 0.9)");
   markValue(earValue, "rgba(255, 206, 86, 0.95)");
 
+  const mean = values.reduce((a, b) => a + b, 0) / values.length;
+
+  const std = Math.sqrt(
+    values.reduce((a, b) => a + Math.pow(b - mean, 2), 0) /
+      (values.length - 1)
+  );
+
+  const normalCurve = labels.map(x => {
+    const density =
+      (1 / (std * Math.sqrt(2 * Math.PI))) *
+      Math.exp(-0.5 * Math.pow((x - mean) / std, 2));
+
+    return density * values.length * width;
+  });
+
   return {
     labels,
     datasets: [
       {
-        label: "Frecuencia de escenarios",
+        type: "bar",
+        label: "Frecuencia",
         data: counts,
         backgroundColor: colors,
         borderColor: colors,
         borderWidth: 1
+      },
+      {
+        type: "line",
+        label: "Normal ajustada",
+        data: normalCurve,
+        borderColor: "rgba(220, 38, 38, 1)",
+        borderWidth: 2,
+        fill: false,
+        pointRadius: 0,
+        tension: 0.3
       }
     ]
   };
