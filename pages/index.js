@@ -3,6 +3,8 @@ import UploadForm from "../components/UploadForm";
 import {
   Chart as ChartJS,
   BarElement,
+  LineElement,
+  PointElement,
   CategoryScale,
   LinearScale,
   Tooltip,
