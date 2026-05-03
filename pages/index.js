@@ -51,7 +51,8 @@ export default function Home() {
 
   return (
     <main className="container">
-      <h1>VaR App</h1>
+      <h1>Aplicacion de VaR por SH (MV = precio x cantidad)</h1>
+      <h2>Roberto Knop</h1>
       <p className="subtitle">Carga un Excel con hojas Precios y Posiciones para calcular VaR por simulación histórica.</p>
 
       <UploadForm setData={setData} setError={setError} />
