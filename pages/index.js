@@ -131,7 +131,7 @@ export default function Home() {
 
   return (
     <main className="container">
-      <h1>Aplicación profesional de VaR por Simulación Histórica</h1>
+      <h1>Aplicación profesional de VaR</h1>
       <h2>Roberto Knop</h2>
 
       <p className="subtitle">
@@ -195,20 +195,26 @@ export default function Home() {
             </div>
           </div>
 
-          <h3>VaR individual por activo</h3>
+          <h3>Análisis por activo</h3>
 
           <table>
             <thead>
               <tr>
                 <th>Activo</th>
                 <th>VaR</th>
+                <th>EaR</th>
+                <th>ESF</th>
+                <th>Ratio EaR / VaR</th>
               </tr>
             </thead>
             <tbody>
-              {Object.keys(data.dict_var).map(a => (
+              {Object.keys(data.dict_activos).map(a => (
                 <tr key={a}>
                   <td>{a}</td>
-                  <td>{formatEUR(data.dict_var[a])}</td>
+                  <td>{formatEUR(data.dict_activos[a].VaR)}</td>
+                  <td>{formatEUR(data.dict_activos[a].EaR)}</td>
+                  <td>{formatEUR(data.dict_activos[a].ESF)}</td>
+                  <td>{data.dict_activos[a].RatioEaRVaRPct?.toFixed(2)}%</td>
                 </tr>
               ))}
             </tbody>
@@ -241,21 +247,21 @@ export default function Home() {
                         title: context =>
                           `Resultado: ${Number(context[0].label).toFixed(2)} €`,
                         label: context =>
-                          `${context.dataset.label}: ${context.raw.toFixed(2)}`
+                          `${context.dataset.label}: ${Number(context.raw).toFixed(2)}`
                       }
                     }
                   },
                   scales: {
-                   x: {
-  ticks: {
-    maxRotation: 90,
-    minRotation: 90,
-    autoSkip: true,
-    maxTicksLimit: 15,
-    callback: function(value) {
-      return Number(this.getLabelForValue(value)).toFixed(2);
-    }
-  },
+                    x: {
+                      ticks: {
+                        maxRotation: 90,
+                        minRotation: 90,
+                        autoSkip: true,
+                        maxTicksLimit: 15,
+                        callback: function(value) {
+                          return Number(this.getLabelForValue(value)).toFixed(2);
+                        }
+                      },
                       title: {
                         display: true,
                         text: "Resultado simulado (€)"
