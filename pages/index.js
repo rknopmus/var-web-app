@@ -65,15 +65,15 @@ export default function Home() {
           <div className="card">
             {Object.keys(data.dict_var).map(a => (
               <p key={a}>
-                Historical Simulation VaR for <strong>{a}</strong> is <strong>{formatEUR(data.dict_var[a])}</strong>
+                El VaR por simulación histórica <strong>{a}</strong> es <strong>{formatEUR(data.dict_var[a])}</strong>
               </p>
             ))}
 
             <hr />
 
-            <p>Historical Simulation Correlated VaR is <strong>{formatEUR(data.TotalVaR)}</strong></p>
-            <p>Historical Simulation Correlated EaR is <strong>{formatEUR(data.TotalEaR)}</strong></p>
-            <p>Historical Simulation Correlated ESF is <strong>{formatEUR(data.TotalESF)}</strong></p>
+            <p>El VaR correlacionado por simulación histórica es<strong>{formatEUR(data.TotalVaR)}</strong></p>
+            <p>El EaR por simulación histórica <strong>{formatEUR(data.TotalEaR)}</strong></p>
+            <p>El ESF por simulación histórica <strong>{formatEUR(data.TotalESF)}</strong></p>
           </div>
 
           <div className="card chart-card">
