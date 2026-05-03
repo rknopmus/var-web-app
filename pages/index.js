@@ -132,6 +132,11 @@ export default function Home() {
 
 <div className="metric">
   <span>ESF+ total correlacionado</span>
+  <div className="metric">
+  <span>Ratio ESF+ / ESF-</span>
+  <strong>{data.RatioESFPct?.toFixed(2)}%</strong>
+  <small>Valor absoluto: {data.RatioESFAbs?.toFixed(4)}</small>
+</div>
   <strong>{formatEUR(data.TotalESFPlus)}</strong>
 </div>
           </div>
