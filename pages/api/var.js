@@ -33,10 +33,32 @@ export default async function handler(req, res) {
     const precios = XLSX.utils.sheet_to_json(workbook.Sheets["Precios"]);
     const posicionesRaw = XLSX.utils.sheet_to_json(workbook.Sheets["Posiciones"]);
 
-    let posiciones = {};
-    posicionesRaw.forEach(p => {
-      posiciones[String(p.Activo).trim()] = Number(p.Posicion);
-    });
+let posiciones = {};
+
+posicionesRaw.forEach(p => {
+  const activo =
+    p.Activo ??
+    p.ACTIVO ??
+    p.activo ??
+    p["Activo"] ??
+    p["ACTIVO"];
+
+  const posicion =
+    p.Posicion ??
+    p.POSICION ??
+    p.posicion ??
+    p["Posición"] ??
+    p["POSICIÓN"];
+
+  if (activo !== undefined && posicion !== undefined) {
+    posiciones[String(activo).trim()] = Number(posicion);
+  }
+});
+    if (Object.keys(posiciones).length === 0) {
+  return res.status(400).json({
+    error: "No se han encontrado posiciones. Revisa que la hoja Posiciones tenga columnas Activo y Posicion."
+  });
+}
 
     const result = calcularVaR(precios, posiciones, alpha, method);
 
