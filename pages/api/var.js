@@ -12,8 +12,8 @@ export default async function handler(req, res) {
   try {
     const code = req.headers["x-access-code"];
     const alpha = Number(req.headers["x-alpha"] || 0.95);
-    const method = req.headers["x-method"] || "historical_original";
-
+    const method = req.headers["x-method"] || "historical";
+    
     if (!validateAccess(code)) {
       return res.status(401).json({ error: "Código inválido o expirado" });
     }
