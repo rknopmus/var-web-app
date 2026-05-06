@@ -30,7 +30,33 @@ const method = req.headers["x-method"] || "historical";
       });
     }
 
- let precios = XLSX.utils.sheet_to_json(workbook.Sheets["Precios"]);
+ let precios = XLSX.utils.sheet_to_json(workbook.Sheets["Precios"], {
+  defval: null
+});
+
+// Limpiar nombres de columnas de Precios
+precios = precios.map(row => {
+  const cleanRow = {};
+
+  Object.keys(row).forEach(key => {
+    cleanRow[String(key).trim()] = row[key];
+  });
+
+  return cleanRow;
+});
+
+// Eliminar filas sin precios válidos
+precios = precios.filter(row =>
+  Object.keys(row).some(k =>
+    k !== "Dates" &&
+    k !== "Fecha" &&
+    row[k] !== null &&
+    row[k] !== undefined &&
+    row[k] !== "" &&
+    !isNaN(Number(String(row[k]).replace(",", "."))) &&
+    Number(String(row[k]).replace(",", ".")) > 0
+  )
+);
 
 precios = precios.filter(row =>
   Object.keys(row).some(k =>
@@ -63,7 +89,7 @@ posicionesRaw.forEach(p => {
     p["POSICIÓN"];
 
   if (activo !== undefined && posicion !== undefined) {
-    posiciones[String(activo).trim()] = Number(posicion);
+    posiciones[String(activo).trim()] = Number(String(posicion).replace(",", "."));
   }
 });
     if (Object.keys(posiciones).length === 0) {
