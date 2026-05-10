@@ -1,6 +1,6 @@
 import * as XLSX from "xlsx";
 import { calcularVaR } from "../../lib/var";
-import { validateAccess } from "../../lib/auth";
+
 
 export const config = {
   api: {
@@ -10,13 +10,13 @@ export const config = {
 
 export default async function handler(req, res) {
   try {
-    const code = req.headers["x-access-code"];
+//    const code = req.headers["x-access-code"];
     const alpha = Number(req.headers["x-alpha"] || 0.95);
 const method = req.headers["x-method"] || "historical";
     
-    if (!validateAccess(code)) {
-      return res.status(401).json({ error: "Código inválido o expirado" });
-    }
+  //  if (!validateAccess(code)) {
+  //    return res.status(401).json({ error: "Código inválido o expirado" });
+  //  }
 
     let buffers = [];
     for await (const chunk of req) buffers.push(chunk);
