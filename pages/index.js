@@ -282,6 +282,25 @@ export default function Home() {
           </div>
         </section>
       )}
+<footer className="footer">
+  <p>
+    Web:{" "}
+    <a
+      href="https://www.knop.es"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      www.knop.es
+    </a>
+  </p>
+
+  <p>
+    Email:{" "}
+    <a href="mailto:roberto@knop.es">
+      roberto@knop.es
+    </a>
+  </p>
+</footer>
     </main>
   );
 }
