@@ -219,7 +219,28 @@ export default function Home() {
               ))}
             </tbody>
           </table>
+ <h3>Contribución al VaR por activo</h3>
 
+          <table>
+            <thead>
+              <tr>
+                <th>Activo</th>
+                <th>VaR</th>
+                <th>Contribución absoluta</th>
+                <th>Contribución (%)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Object.keys(data.contribucionVaR || {}).map(a => (
+                <tr key={a}>
+                  <td>{a}</td>
+                  <td>{formatEUR(data.contribucionVaR[a].VaR)}</td>
+                  <td>{formatEUR(data.contribucionVaR[a].ContribucionAbs)}</td>
+                  <td>{data.contribucionVaR[a].ContribucionPct?.toFixed(2)}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
           <h3>Distribución de resultados simulados</h3>
 
           <div className="legend">
