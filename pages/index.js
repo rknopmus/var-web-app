@@ -234,7 +234,8 @@ export default function Home() {
               {Object.keys(data.contribucionVaR || {}).map(a => (
                 <tr key={a}>
                   <td>{a}</td>
-                  <td>{formatEUR(data.contribucionVaR[a].VaR)}</td>
+                 
+                <td>{formatEUR(data.contribucionVaR[a].VaRIndividual)}</td>
                   <td>{formatEUR(data.contribucionVaR[a].ContribucionAbs)}</td>
                   <td>{data.contribucionVaR[a].ContribucionPct?.toFixed(2)}%</td>
                 </tr>
