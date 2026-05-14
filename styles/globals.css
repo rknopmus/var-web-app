@@ -48,15 +48,26 @@ select {
   font-size: 15px;
 }
 
-button {
-  margin-top: 12px;
-  padding: 12px 18px;
-  background: #111827;
+.card button {
+  background: #dc2626;
   color: white;
+
   border: none;
-  border-radius: 12px;
-  font-size: 16px;
+
+  padding: 12px 18px;
+
+  border-radius: 8px;
+
+  font-weight: 700;
+
   cursor: pointer;
+
+  transition: all 0.2s ease;
+}
+
+.card button:hover {
+  background: #b91c1c;
+  transform: translateY(-1px);
 }
 
 button:hover {
