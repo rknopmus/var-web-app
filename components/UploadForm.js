@@ -72,11 +72,24 @@ export default function UploadForm({ setData, setError, lang = "es" }) {
 
       <label>{txt[lang].file}</label>
       <input
-        type="file"
-        accept=".xlsx,.xls"
-        onChange={e => setFile(e.target.files[0])}
-      />
+  id="excel-upload"
+  type="file"
+  accept=".xlsx,.xls"
+  style={{ display: "none" }}
+  onChange={e => setFile(e.target.files[0])}
+/>
 
+<label htmlFor="excel-upload" className="customFileButton">
+  {lang === "es" ? "Seleccionar archivo" : "Select file"}
+</label>
+
+<span className="fileName">
+  {file
+    ? file.name
+    : lang === "es"
+    ? "Ningún archivo seleccionado"
+    : "No file selected"}
+</span>
       <label>{txt[lang].percentile}</label>
       <select value={alpha} onChange={e => setAlpha(e.target.value)}>
         <option value="0.90">90%</option>
