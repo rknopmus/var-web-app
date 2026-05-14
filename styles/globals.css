@@ -147,3 +147,21 @@ th {
 .dot.ear {
   background: rgba(255, 206, 86, 0.95);
 }
+.languageSelector {
+  display: flex;
+  gap: 10px;
+  margin: 16px 0;
+}
+
+.languageSelector button {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  background: white;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.languageSelector button:hover {
+  background: #f3f4f6;
+}
