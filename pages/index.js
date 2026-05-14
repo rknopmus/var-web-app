@@ -123,74 +123,79 @@ function buildHistogram(values, bins = 50, varValue, earValue) {
 export default function Home() {
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
-const [lang, setLang] = useState("es");
+  const [lang, setLang] = useState("es");
 
-const t = {
-  es: {
-    title: "Calculadora de riesgos de mercado",
-    subtitle: "Carga un Excel con hojas",
-    prices: "Precios",
-    positions: "Posiciones",
-    results: "Resultados",
-    percentile: "Percentil",
-    method: "Método",
-    historical: "Simulación histórica",
-    normal: "Paramétrico Normal",
-    varTotal: "VaR total correlacionado",
-    earTotal: "EaR total correlacionado",
-    ratioEarVar: "Ratio EaR / VaR",
-    absValue: "Valor absoluto",
-    esfMinus: "ESF- total correlacionado",
-    esfPlus: "ESF+ total correlacionado",
-    ratioEsf: "Ratio ESF+ / ESF-",
-    byAsset: "Análisis por activo",
-    asset: "Activo",
-    contribution: "Contribución al VaR por activo",
-    individualVar: "VaR individual",
-    absContribution: "Contribución absoluta",
-    pctContribution: "Contribución (%)",
-    distribution: "Distribución de resultados simulados",
-    varBar: "Barra VaR",
-    earBar: "Barra EaR",
-    noHistogram: "No hay datos suficientes para construir el histograma."
-    modelNote: "(para modelos de valoración = precio x cantidad)",
-uploadText: "Carga un Excel con hojas",
-  and: "y",
-  },
+  const t = {
+    es: {
+      title: "Calculadora de riesgos de mercado",
+      modelNote: "(para modelos de valoración = precio x cantidad)",
+      uploadText: "Carga un Excel con hojas",
+      prices: "Precios",
+      positions: "Posiciones",
+      and: "y",
+      results: "Resultados",
+      percentile: "Percentil",
+      method: "Método",
+      historical: "Simulación histórica",
+      normal: "Paramétrico Normal",
+      varTotal: "VaR total correlacionado",
+      earTotal: "EaR total correlacionado",
+      ratioEarVar: "Ratio EaR / VaR",
+      absValue: "Valor absoluto",
+      esfMinus: "ESF- total correlacionado",
+      esfPlus: "ESF+ total correlacionado",
+      ratioEsf: "Ratio ESF+ / ESF-",
+      byAsset: "Análisis por activo",
+      asset: "Activo",
+      contribution: "Contribución al VaR por activo",
+      individualVar: "VaR individual",
+      absContribution: "Contribución absoluta",
+      pctContribution: "Contribución (%)",
+      distribution: "Distribución de resultados simulados",
+      varBar: "Barra VaR",
+      earBar: "Barra EaR",
+      frequency: "Frecuencia",
+      fittedNormal: "Normal ajustada",
+      simulatedResult: "Resultado simulado (€)",
+      simulatedResultTooltip: "Resultado",
+      noHistogram: "No hay datos suficientes para construir el histograma."
+    },
+    en: {
+      title: "Market Risk Calculator",
+      modelNote: "(for valuation models = price x quantity)",
+      uploadText: "Upload an Excel file with sheets",
+      prices: "Prices",
+      positions: "Positions",
+      and: "and",
+      results: "Results",
+      percentile: "Percentile",
+      method: "Method",
+      historical: "Historical simulation",
+      normal: "Parametric Normal",
+      varTotal: "Correlated total VaR",
+      earTotal: "Correlated total EaR",
+      ratioEarVar: "EaR / VaR ratio",
+      absValue: "Absolute value",
+      esfMinus: "Correlated total ESF-",
+      esfPlus: "Correlated total ESF+",
+      ratioEsf: "ESF+ / ESF- ratio",
+      byAsset: "Asset analysis",
+      asset: "Asset",
+      contribution: "VaR contribution by asset",
+      individualVar: "Individual VaR",
+      absContribution: "Absolute contribution",
+      pctContribution: "Contribution (%)",
+      distribution: "Simulated results distribution",
+      varBar: "VaR bar",
+      earBar: "EaR bar",
+      frequency: "Frequency",
+      fittedNormal: "Fitted normal",
+      simulatedResult: "Simulated result (€)",
+      simulatedResultTooltip: "Result",
+      noHistogram: "Not enough data to build the histogram."
+    }
+  };
 
-  en: {
-    title: "Market Risk Calculator",
-    subtitle: "Upload an Excel file with sheets",
-    prices: "Prices",
-    positions: "Positions",
-    results: "Results",
-    percentile: "Percentile",
-    method: "Method",
-    historical: "Historical simulation",
-    normal: "Parametric Normal",
-    varTotal: "Correlated total VaR",
-    earTotal: "Correlated total EaR",
-    ratioEarVar: "EaR / VaR ratio",
-    absValue: "Absolute value",
-    esfMinus: "Correlated total ESF-",
-    esfPlus: "Correlated total ESF+",
-    ratioEsf: "ESF+ / ESF- ratio",
-    byAsset: "Asset analysis",
-    asset: "Asset",
-    contribution: "VaR contribution by asset",
-    individualVar: "Individual VaR",
-    absContribution: "Absolute contribution",
-    pctContribution: "Contribution (%)",
-    distribution: "Simulated results distribution",
-    varBar: "VaR bar",
-    earBar: "EaR bar",
-    noHistogram: "Not enough data to build the histogram."
-    modelNote: "(for valuation models = price x quantity)",
-uploadText: "Upload an Excel file with sheets",
-          and: "and",
-  }
-
-};
   const chartData =
     data && data.resultados_total
       ? buildHistogram(data.resultados_total, 50, data.TotalVaR, data.TotalEaR)
@@ -198,86 +203,90 @@ uploadText: "Upload an Excel file with sheets",
 
   return (
     <main className="container">
+      <div className="languageSelector">
+        <button onClick={() => setLang("es")}>🇪🇸</button>
+        <button onClick={() => setLang("en")}>🇬🇧</button>
+      </div>
 
-    <h1>{t[lang].title}</h1>
-
-<div className="languageSelector">
-  <button onClick={() => setLang("es")}>🇪🇸</button>
-  <button onClick={() => setLang("en")}>🇬🇧</button>
-</div>
+      <h1>{t[lang].title}</h1>
       <h2>Roberto Knop</h2>
-<h3>{t[lang].modelNote}</h3>
+      <h3>{t[lang].modelNote}</h3>
 
-<p className="subtitle">
-  {t[lang].uploadText} <strong>{t[lang].prices}</strong>{" "}
-  {t[lang].and} <strong>{t[lang].positions}</strong>.
-</p>
+      <p className="subtitle">
+        {t[lang].uploadText} <strong>{t[lang].prices}</strong>{" "}
+        {t[lang].and} <strong>{t[lang].positions}</strong>.
+      </p>
 
-
-  <UploadForm setData={setData} setError={setError} lang={lang} />
+      <UploadForm setData={setData} setError={setError} lang={lang} />
 
       {error && <div className="error">{error}</div>}
 
       {data && (
         <section className="results">
-<h2>{t[lang].results}</h2>
+          <h2>{t[lang].results}</h2>
 
           <div className="grid">
             <div className="metric">
-<span>{t[lang].percentile}</span>
+              <span>{t[lang].percentile}</span>
               <strong>{(data.alpha * 100).toFixed(1)}%</strong>
             </div>
 
             <div className="metric">
-<span>{t[lang].method}</span>
+              <span>{t[lang].method}</span>
               <strong>
-<span>{t[lang].method}</span>
+                {data.method === "historical"
+                  ? t[lang].historical
+                  : t[lang].normal}
               </strong>
             </div>
 
             <div className="metric">
-<span>{t[lang].varTotal}</span>
+              <span>{t[lang].varTotal}</span>
               <strong>{formatEUR(data.TotalVaR)}</strong>
             </div>
 
             <div className="metric">
-<span>{t[lang].earTotal}</span>
+              <span>{t[lang].earTotal}</span>
               <strong>{formatEUR(data.TotalEaR)}</strong>
             </div>
 
             <div className="metric">
-<span>{t[lang].ratioEarVar}</span>
+              <span>{t[lang].ratioEarVar}</span>
               <strong>{data.RatioEaRVaRPct?.toFixed(2)}%</strong>
-             <small>{t[lang].absValue}: {data.RatioEaRVaRAbs?.toFixed(4)}</small>
+              <small>
+                {t[lang].absValue}: {data.RatioEaRVaRAbs?.toFixed(4)}
+              </small>
             </div>
 
             <div className="metric">
-<span>{t[lang].esfMinus}</span>
+              <span>{t[lang].esfMinus}</span>
               <strong>{formatEUR(data.TotalESFMinus)}</strong>
             </div>
 
             <div className="metric">
-<span>{t[lang].esfPlus}</span>
+              <span>{t[lang].esfPlus}</span>
               <strong>{formatEUR(data.TotalESFPlus)}</strong>
             </div>
 
             <div className="metric">
-<span>{t[lang].ratioEsf}</span>
+              <span>{t[lang].ratioEsf}</span>
               <strong>{data.RatioESFPct?.toFixed(2)}%</strong>
-              <small>Valor absoluto: {data.RatioESFAbs?.toFixed(4)}</small>
+              <small>
+                {t[lang].absValue}: {data.RatioESFAbs?.toFixed(4)}
+              </small>
             </div>
           </div>
 
-<h3>{t[lang].byAsset}</h3>
+          <h3>{t[lang].byAsset}</h3>
 
           <table>
             <thead>
               <tr>
-<th>{t[lang].asset}</th>
+                <th>{t[lang].asset}</th>
                 <th>VaR</th>
                 <th>EaR</th>
                 <th>ESF</th>
-                <th>Ratio EaR / VaR</th>
+                <th>{t[lang].ratioEarVar}</th>
               </tr>
             </thead>
             <tbody>
@@ -292,41 +301,54 @@ uploadText: "Upload an Excel file with sheets",
               ))}
             </tbody>
           </table>
-<h3>{t[lang].contribution}</h3>
+
+          <h3>{t[lang].contribution}</h3>
 
           <table>
             <thead>
               <tr>
-                <th>Activo</th>
-                <th>VaR</th>
-<th>{t[lang].absContribution}</th>
-<th>{t[lang].pctContribution}</th>
+                <th>{t[lang].asset}</th>
+                <th>{t[lang].individualVar}</th>
+                <th>{t[lang].absContribution}</th>
+                <th>{t[lang].pctContribution}</th>
               </tr>
             </thead>
             <tbody>
               {Object.keys(data.contribucionVaR || {}).map(a => (
                 <tr key={a}>
                   <td>{a}</td>
-                 
-                <td>{formatEUR(data.contribucionVaR[a].VaRIndividual)}</td>
+                  <td>{formatEUR(data.contribucionVaR[a].VaRIndividual)}</td>
                   <td>{formatEUR(data.contribucionVaR[a].ContribucionAbs)}</td>
                   <td>{data.contribucionVaR[a].ContribucionPct?.toFixed(2)}%</td>
                 </tr>
               ))}
             </tbody>
           </table>
-<h3>{t[lang].distribution}</h3>
+
+          <h3>{t[lang].distribution}</h3>
 
           <div className="legend">
-<span className="dot var"></span> {t[lang].varBar}
-<span className="dot ear"></span> {t[lang].earBar}
+            <span className="dot var"></span> {t[lang].varBar}
+            <span className="dot ear"></span> {t[lang].earBar}
           </div>
 
           <div className="chart">
             {chartData ? (
               <Chart
                 type="bar"
-                data={chartData}
+                data={{
+                  ...chartData,
+                  datasets: [
+                    {
+                      ...chartData.datasets[0],
+                      label: t[lang].frequency
+                    },
+                    {
+                      ...chartData.datasets[1],
+                      label: t[lang].fittedNormal
+                    }
+                  ]
+                }}
                 options={{
                   responsive: true,
                   interaction: {
@@ -340,9 +362,13 @@ uploadText: "Upload an Excel file with sheets",
                     tooltip: {
                       callbacks: {
                         title: context =>
-                          `Resultado: ${Number(context[0].label).toFixed(2)} €`,
+                          `${t[lang].simulatedResultTooltip}: ${Number(
+                            context[0].label
+                          ).toFixed(2)} €`,
                         label: context =>
-                          `${context.dataset.label}: ${Number(context.raw).toFixed(2)}`
+                          `${context.dataset.label}: ${Number(
+                            context.raw
+                          ).toFixed(2)}`
                       }
                     }
                   },
@@ -359,43 +385,41 @@ uploadText: "Upload an Excel file with sheets",
                       },
                       title: {
                         display: true,
-                        text: "Resultado simulado (€)"
+                        text: t[lang].simulatedResult
                       }
                     },
                     y: {
                       title: {
                         display: true,
-                        text: "Frecuencia"
+                        text: t[lang].frequency
                       }
                     }
                   }
                 }}
               />
             ) : (
-<p>{t[lang].noHistogram}</p>
+              <p>{t[lang].noHistogram}</p>
             )}
           </div>
         </section>
       )}
-<footer className="footer">
-  <p>
-    Web:{" "}
-    <a
-      href="https://www.knop.es"
-      target="_blank"
-      rel="noopener noreferrer"
-    >
-      www.knop.es
-    </a>
-  </p>
 
-  <p>
-    Email:{" "}
-    <a href="mailto:roberto@knop.es">
-      roberto@knop.es
-    </a>
-  </p>
-</footer>
+      <footer className="footer">
+        <p>
+          Web:{" "}
+          <a
+            href="https://www.knop.es"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            www.knop.es
+          </a>
+        </p>
+
+        <p>
+          Email: <a href="mailto:roberto@knop.es">roberto@knop.es</a>
+        </p>
+      </footer>
     </main>
   );
 }
