@@ -1,6 +1,31 @@
 import { useState } from "react";
 
-export default function UploadForm({ setData, setError }) {
+export default function UploadForm({ setData, setError, lang = "es" }) {
+  const txt = {
+    es: {
+      code: "Código de acceso",
+      file: "Archivo Excel",
+      percentile: "Percentil",
+      method: "Método",
+      historical: "Simulación histórica",
+      normal: "Paramétrico Normal",
+      calculate: "Calcular VaR",
+      fileError: "Debes subir un archivo Excel.",
+      varError: "Error calculando VaR."
+    },
+    en: {
+      code: "Access code",
+      file: "Excel file",
+      percentile: "Percentile",
+      method: "Method",
+      historical: "Historical simulation",
+      normal: "Parametric Normal",
+      calculate: "Calculate VaR",
+      fileError: "You must upload an Excel file.",
+      varError: "Error calculating VaR."
+    }
+  };
+
   const [file, setFile] = useState(null);
   const [code, setCode] = useState("");
   const [alpha, setAlpha] = useState("0.95");
@@ -11,7 +36,7 @@ export default function UploadForm({ setData, setError }) {
     setData(null);
 
     if (!file) {
-      setError("Debes subir un archivo Excel.");
+      setError(txt[lang].fileError);
       return;
     }
 
@@ -28,7 +53,7 @@ export default function UploadForm({ setData, setError }) {
     const data = await res.json();
 
     if (!res.ok) {
-      setError(data.error || "Error calculando VaR.");
+      setError(data.error || txt[lang].varError);
       return;
     }
 
@@ -37,35 +62,36 @@ export default function UploadForm({ setData, setError }) {
 
   return (
     <div className="card">
-      <label>Código de acceso</label>
+      <label>{txt[lang].code}</label>
       <input
         type="text"
         placeholder="CLIENTE2026"
+        value={code}
         onChange={e => setCode(e.target.value)}
       />
 
-      <label>Archivo Excel</label>
+      <label>{txt[lang].file}</label>
       <input
         type="file"
         accept=".xlsx,.xls"
         onChange={e => setFile(e.target.files[0])}
       />
 
-      <label>Percentil</label>
+      <label>{txt[lang].percentile}</label>
       <select value={alpha} onChange={e => setAlpha(e.target.value)}>
         <option value="0.90">90%</option>
         <option value="0.95">95%</option>
-        <option value="0.975">97,5%</option>
+        <option value="0.975">97.5%</option>
         <option value="0.99">99%</option>
       </select>
 
-<label>Método</label>
-<select value={method} onChange={e => setMethod(e.target.value)}>
-  <option value="historical">Simulación histórica</option>
-  <option value="parametric_normal">Paramétrico Normal</option>
-</select>
+      <label>{txt[lang].method}</label>
+      <select value={method} onChange={e => setMethod(e.target.value)}>
+        <option value="historical">{txt[lang].historical}</option>
+        <option value="parametric_normal">{txt[lang].normal}</option>
+      </select>
 
-      <button onClick={handleSubmit}>Calcular VaR</button>
+      <button onClick={handleSubmit}>{txt[lang].calculate}</button>
     </div>
   );
 }
