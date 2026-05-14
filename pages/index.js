@@ -123,7 +123,67 @@ function buildHistogram(values, bins = 50, varValue, earValue) {
 export default function Home() {
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
+const [lang, setLang] = useState("es");
 
+const t = {
+  es: {
+    title: "Calculadora de riesgos de mercado",
+    subtitle: "Carga un Excel con hojas",
+    prices: "Precios",
+    positions: "Posiciones",
+    results: "Resultados",
+    percentile: "Percentil",
+    method: "Método",
+    historical: "Simulación histórica",
+    normal: "Paramétrico Normal",
+    varTotal: "VaR total correlacionado",
+    earTotal: "EaR total correlacionado",
+    ratioEarVar: "Ratio EaR / VaR",
+    absValue: "Valor absoluto",
+    esfMinus: "ESF- total correlacionado",
+    esfPlus: "ESF+ total correlacionado",
+    ratioEsf: "Ratio ESF+ / ESF-",
+    byAsset: "Análisis por activo",
+    asset: "Activo",
+    contribution: "Contribución al VaR por activo",
+    individualVar: "VaR individual",
+    absContribution: "Contribución absoluta",
+    pctContribution: "Contribución (%)",
+    distribution: "Distribución de resultados simulados",
+    varBar: "Barra VaR",
+    earBar: "Barra EaR",
+    noHistogram: "No hay datos suficientes para construir el histograma."
+  },
+
+  en: {
+    title: "Market Risk Calculator",
+    subtitle: "Upload an Excel file with sheets",
+    prices: "Prices",
+    positions: "Positions",
+    results: "Results",
+    percentile: "Percentile",
+    method: "Method",
+    historical: "Historical simulation",
+    normal: "Parametric Normal",
+    varTotal: "Correlated total VaR",
+    earTotal: "Correlated total EaR",
+    ratioEarVar: "EaR / VaR ratio",
+    absValue: "Absolute value",
+    esfMinus: "Correlated total ESF-",
+    esfPlus: "Correlated total ESF+",
+    ratioEsf: "ESF+ / ESF- ratio",
+    byAsset: "Asset analysis",
+    asset: "Asset",
+    contribution: "VaR contribution by asset",
+    individualVar: "Individual VaR",
+    absContribution: "Absolute contribution",
+    pctContribution: "Contribution (%)",
+    distribution: "Simulated results distribution",
+    varBar: "VaR bar",
+    earBar: "EaR bar",
+    noHistogram: "Not enough data to build the histogram."
+  }
+};
   const chartData =
     data && data.resultados_total
       ? buildHistogram(data.resultados_total, 50, data.TotalVaR, data.TotalEaR)
@@ -132,6 +192,12 @@ export default function Home() {
   return (
     <main className="container">
       <h1>Calculadora de riesgos de mercado</h1>
+    <h1>{t[lang].title}</h1>
+
+<div className="languageSelector">
+  <button onClick={() => setLang("es")}>🇪🇸 Español</button>
+  <button onClick={() => setLang("en")}>🇬🇧 English</button>
+</div>
       <h2>Roberto Knop</h2>
       <h3>(para modelos de valoracion = precio x cantidad)</h3>
       <p className="subtitle">
@@ -145,62 +211,60 @@ export default function Home() {
 
       {data && (
         <section className="results">
-          <h2>Resultados</h2>
+<h2>{t[lang].results}</h2>
 
           <div className="grid">
             <div className="metric">
-              <span>Percentil</span>
+<span>{t[lang].percentile}</span>
               <strong>{(data.alpha * 100).toFixed(1)}%</strong>
             </div>
 
             <div className="metric">
-              <span>Método</span>
+<span>{t[lang].method}</span>
               <strong>
-                {data.method === "historical"
-                  ? "Simulación histórica"
-                  : "Paramétrico Normal"}
+<span>{t[lang].method}</span>
               </strong>
             </div>
 
             <div className="metric">
-              <span>VaR total correlacionado</span>
+<span>{t[lang].varTotal}</span>
               <strong>{formatEUR(data.TotalVaR)}</strong>
             </div>
 
             <div className="metric">
-              <span>EaR total correlacionado</span>
+<span>{t[lang].earTotal}</span>
               <strong>{formatEUR(data.TotalEaR)}</strong>
             </div>
 
             <div className="metric">
-              <span>Ratio EaR / VaR</span>
+<span>{t[lang].ratioEarVar}</span>
               <strong>{data.RatioEaRVaRPct?.toFixed(2)}%</strong>
-              <small>Valor absoluto: {data.RatioEaRVaRAbs?.toFixed(4)}</small>
+             <small>{t[lang].absValue}: {data.RatioEaRVaRAbs?.toFixed(4)}</small>
             </div>
 
             <div className="metric">
-              <span>ESF- total correlacionado</span>
+<span>{t[lang].esfMinus}</span>
               <strong>{formatEUR(data.TotalESFMinus)}</strong>
             </div>
 
             <div className="metric">
-              <span>ESF+ total correlacionado</span>
+<span>{t[lang].esfPlus}</span>
               <strong>{formatEUR(data.TotalESFPlus)}</strong>
             </div>
 
             <div className="metric">
-              <span>Ratio ESF+ / ESF-</span>
+<span>{t[lang].ratioEsf}</span>
               <strong>{data.RatioESFPct?.toFixed(2)}%</strong>
               <small>Valor absoluto: {data.RatioESFAbs?.toFixed(4)}</small>
             </div>
           </div>
 
-          <h3>Análisis por activo</h3>
+<h3>{t[lang].byAsset}</h3>
 
           <table>
             <thead>
               <tr>
-                <th>Activo</th>
+<th>{t[lang].asset}</th>
                 <th>VaR</th>
                 <th>EaR</th>
                 <th>ESF</th>
@@ -219,15 +283,15 @@ export default function Home() {
               ))}
             </tbody>
           </table>
- <h3>Contribución al VaR por activo</h3>
+<h3>{t[lang].contribution}</h3>
 
           <table>
             <thead>
               <tr>
                 <th>Activo</th>
                 <th>VaR</th>
-                <th>Contribución absoluta</th>
-                <th>Contribución (%)</th>
+<th>{t[lang].absContribution}</th>
+<th>{t[lang].pctContribution}</th>
               </tr>
             </thead>
             <tbody>
@@ -242,11 +306,11 @@ export default function Home() {
               ))}
             </tbody>
           </table>
-          <h3>Distribución de resultados simulados</h3>
+<h3>{t[lang].distribution}</h3>
 
           <div className="legend">
-            <span className="dot var"></span> Barra VaR
-            <span className="dot ear"></span> Barra EaR
+<span className="dot var"></span> {t[lang].varBar}
+<span className="dot ear"></span> {t[lang].earBar}
           </div>
 
           <div className="chart">
@@ -299,7 +363,7 @@ export default function Home() {
                 }}
               />
             ) : (
-              <p>No hay datos suficientes para construir el histograma.</p>
+<p>{t[lang].noHistogram}</p>
             )}
           </div>
         </section>
