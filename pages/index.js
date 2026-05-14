@@ -205,7 +205,8 @@ const t = {
         <strong>Posiciones</strong>.
       </p>
 
-      <UploadForm setData={setData} setError={setError} />
+
+  <UploadForm setData={setData} setError={setError} lang={lang} />
 
       {error && <div className="error">{error}</div>}
 
