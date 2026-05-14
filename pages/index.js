@@ -191,7 +191,7 @@ const t = {
 
   return (
     <main className="container">
-      <h1>Calculadora de riesgos de mercado</h1>
+
     <h1>{t[lang].title}</h1>
 
 <div className="languageSelector">
