@@ -195,8 +195,8 @@ const t = {
     <h1>{t[lang].title}</h1>
 
 <div className="languageSelector">
-  <button onClick={() => setLang("es")}>🇪🇸 Español</button>
-  <button onClick={() => setLang("en")}>🇬🇧 English</button>
+  <button onClick={() => setLang("es")}>🇪🇸</button>
+  <button onClick={() => setLang("en")}>🇬🇧</button>
 </div>
       <h2>Roberto Knop</h2>
       <h3>(para modelos de valoracion = precio x cantidad)</h3>
