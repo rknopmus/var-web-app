@@ -153,6 +153,9 @@ const t = {
     varBar: "Barra VaR",
     earBar: "Barra EaR",
     noHistogram: "No hay datos suficientes para construir el histograma."
+    modelNote: "(para modelos de valoración = precio x cantidad)",
+uploadText: "Carga un Excel con hojas",
+  and: "y",
   },
 
   en: {
@@ -182,7 +185,11 @@ const t = {
     varBar: "VaR bar",
     earBar: "EaR bar",
     noHistogram: "Not enough data to build the histogram."
+    modelNote: "(for valuation models = price x quantity)",
+uploadText: "Upload an Excel file with sheets",
+          and: "and",
   }
+
 };
   const chartData =
     data && data.resultados_total
@@ -199,11 +206,12 @@ const t = {
   <button onClick={() => setLang("en")}>🇬🇧</button>
 </div>
       <h2>Roberto Knop</h2>
-      <h3>(para modelos de valoracion = precio x cantidad)</h3>
-      <p className="subtitle">
-        Carga un Excel con hojas <strong>Precios</strong> y{" "}
-        <strong>Posiciones</strong>.
-      </p>
+<h3>{t[lang].modelNote}</h3>
+
+<p className="subtitle">
+  {t[lang].uploadText} <strong>{t[lang].prices}</strong>{" "}
+  {t[lang].and} <strong>{t[lang].positions}</strong>.
+</p>
 
 
   <UploadForm setData={setData} setError={setError} lang={lang} />
