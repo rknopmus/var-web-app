@@ -1,6 +1,7 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import UploadForm from "../components/UploadForm";
+import OptimizationPanel from "../components/OptimizationPanel";
 
 import {
   Chart as ChartJS,
@@ -47,18 +48,14 @@ function buildHistogram(values, bins = 50, varValue, earValue) {
 
   const min = Math.min(...values);
   const max = Math.max(...values);
-
   if (min === max) return null;
 
   const width = (max - min) / bins;
-
   const labels = [];
   const counts = Array(bins).fill(0);
   const colors = Array(bins).fill("rgba(54, 162, 235, 0.6)");
 
-  for (let i = 0; i < bins; i++) {
-    labels.push(min + i * width + width / 2);
-  }
+  for (let i = 0; i < bins; i++) labels.push(min + i * width + width / 2);
 
   values.forEach(v => {
     let index = Math.floor((v - min) / width);
@@ -70,16 +67,13 @@ function buildHistogram(values, bins = 50, varValue, earValue) {
   function markValue(value, color) {
     if (value === null || value === undefined || isNaN(value)) return;
     const index = Math.floor((value - min) / width);
-    if (index >= 0 && index < bins) {
-      colors[index] = color;
-    }
+    if (index >= 0 && index < bins) colors[index] = color;
   }
 
   markValue(varValue, "rgba(255, 99, 132, 0.9)");
   markValue(earValue, "rgba(255, 206, 86, 0.95)");
 
   const mean = values.reduce((a, b) => a + b, 0) / values.length;
-
   const std = Math.sqrt(
     values.reduce((a, b) => a + Math.pow(b - mean, 2), 0) /
       (values.length - 1)
@@ -87,11 +81,9 @@ function buildHistogram(values, bins = 50, varValue, earValue) {
 
   const normalCurve = labels.map(x => {
     if (!std || !isFinite(std)) return 0;
-
     const density =
       (1 / (std * Math.sqrt(2 * Math.PI))) *
       Math.exp(-0.5 * Math.pow((x - mean) / std, 2));
-
     return density * values.length * width;
   });
 
@@ -124,6 +116,8 @@ export default function Home() {
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
   const [lang, setLang] = useState("es");
+  const [activeTab, setActiveTab] = useState("var");
+  const [sourceFile, setSourceFile] = useState(null);
 
   const t = {
     es: {
@@ -133,6 +127,8 @@ export default function Home() {
       prices: "Precios",
       positions: "Posiciones",
       and: "y",
+      varTab: "Cálculo VaR",
+      optimizationTab: "Optimización de cartera 🔒",
       results: "Resultados",
       percentile: "Percentil",
       method: "Método",
@@ -167,6 +163,8 @@ export default function Home() {
       prices: "Prices",
       positions: "Positions",
       and: "and",
+      varTab: "VaR calculation",
+      optimizationTab: "Portfolio optimization 🔒",
       results: "Results",
       percentile: "Percentile",
       method: "Method",
@@ -217,191 +215,202 @@ export default function Home() {
         {t[lang].and} <strong>{t[lang].positions}</strong>.
       </p>
 
-      <UploadForm setData={setData} setError={setError} lang={lang} />
+      <div className="tabs">
+        <button
+          className={activeTab === "var" ? "activeTab" : ""}
+          onClick={() => setActiveTab("var")}
+        >
+          {t[lang].varTab}
+        </button>
+        <button
+          className={activeTab === "optimization" ? "activeTab" : ""}
+          onClick={() => setActiveTab("optimization")}
+        >
+          {t[lang].optimizationTab}
+        </button>
+      </div>
 
-      {error && <div className="error">{error}</div>}
+      {activeTab === "var" && (
+        <>
+          <UploadForm
+            setData={setData}
+            setError={setError}
+            setSourceFile={setSourceFile}
+            lang={lang}
+          />
 
-      {data && (
-        <section className="results">
-          <h2>{t[lang].results}</h2>
+          {error && <div className="error">{error}</div>}
 
-          <div className="grid">
-            <div className="metric">
-              <span>{t[lang].percentile}</span>
-              <strong>{(data.alpha * 100).toFixed(1)}%</strong>
-            </div>
+          {data && (
+            <section className="results">
+              <h2>{t[lang].results}</h2>
 
-            <div className="metric">
-              <span>{t[lang].method}</span>
-              <strong>
-                {data.method === "historical"
-                  ? t[lang].historical
-                  : t[lang].normal}
-              </strong>
-            </div>
+              <div className="grid">
+                <div className="metric">
+                  <span>{t[lang].percentile}</span>
+                  <strong>{(data.alpha * 100).toFixed(1)}%</strong>
+                </div>
 
-            <div className="metric">
-              <span>{t[lang].varTotal}</span>
-              <strong>{formatEUR(data.TotalVaR)}</strong>
-            </div>
+                <div className="metric">
+                  <span>{t[lang].method}</span>
+                  <strong>
+                    {data.method === "historical"
+                      ? t[lang].historical
+                      : t[lang].normal}
+                  </strong>
+                </div>
 
-            <div className="metric">
-              <span>{t[lang].earTotal}</span>
-              <strong>{formatEUR(data.TotalEaR)}</strong>
-            </div>
+                <div className="metric">
+                  <span>{t[lang].varTotal}</span>
+                  <strong>{formatEUR(data.TotalVaR)}</strong>
+                </div>
 
-            <div className="metric">
-              <span>{t[lang].ratioEarVar}</span>
-              <strong>{data.RatioEaRVaRPct?.toFixed(2)}%</strong>
-              <small>
-                {t[lang].absValue}: {data.RatioEaRVaRAbs?.toFixed(4)}
-              </small>
-            </div>
+                <div className="metric">
+                  <span>{t[lang].earTotal}</span>
+                  <strong>{formatEUR(data.TotalEaR)}</strong>
+                </div>
 
-            <div className="metric">
-              <span>{t[lang].esfMinus}</span>
-              <strong>{formatEUR(data.TotalESFMinus)}</strong>
-            </div>
+                <div className="metric">
+                  <span>{t[lang].ratioEarVar}</span>
+                  <strong>{data.RatioEaRVaRPct?.toFixed(2)}%</strong>
+                  <small>
+                    {t[lang].absValue}: {data.RatioEaRVaRAbs?.toFixed(4)}
+                  </small>
+                </div>
 
-            <div className="metric">
-              <span>{t[lang].esfPlus}</span>
-              <strong>{formatEUR(data.TotalESFPlus)}</strong>
-            </div>
+                <div className="metric">
+                  <span>{t[lang].esfMinus}</span>
+                  <strong>{formatEUR(data.TotalESFMinus)}</strong>
+                </div>
 
-            <div className="metric">
-              <span>{t[lang].ratioEsf}</span>
-              <strong>{data.RatioESFPct?.toFixed(2)}%</strong>
-              <small>
-                {t[lang].absValue}: {data.RatioESFAbs?.toFixed(4)}
-              </small>
-            </div>
-          </div>
+                <div className="metric">
+                  <span>{t[lang].esfPlus}</span>
+                  <strong>{formatEUR(data.TotalESFPlus)}</strong>
+                </div>
 
-          <h3>{t[lang].byAsset}</h3>
+                <div className="metric">
+                  <span>{t[lang].ratioEsf}</span>
+                  <strong>{data.RatioESFPct?.toFixed(2)}%</strong>
+                  <small>
+                    {t[lang].absValue}: {data.RatioESFAbs?.toFixed(4)}
+                  </small>
+                </div>
+              </div>
 
-          <table>
-            <thead>
-              <tr>
-                <th>{t[lang].asset}</th>
-                <th>VaR</th>
-                <th>EaR</th>
-                <th>ESF</th>
-                <th>{t[lang].ratioEarVar}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Object.keys(data.dict_activos).map(a => (
-                <tr key={a}>
-                  <td>{a}</td>
-                  <td>{formatEUR(data.dict_activos[a].VaR)}</td>
-                  <td>{formatEUR(data.dict_activos[a].EaR)}</td>
-                  <td>{formatEUR(data.dict_activos[a].ESF)}</td>
-                  <td>{data.dict_activos[a].RatioEaRVaRPct?.toFixed(2)}%</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+              <h3>{t[lang].byAsset}</h3>
 
-          <h3>{t[lang].contribution}</h3>
+              <table>
+                <thead>
+                  <tr>
+                    <th>{t[lang].asset}</th>
+                    <th>VaR</th>
+                    <th>EaR</th>
+                    <th>ESF</th>
+                    <th>{t[lang].ratioEarVar}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Object.keys(data.dict_activos).map(a => (
+                    <tr key={a}>
+                      <td>{a}</td>
+                      <td>{formatEUR(data.dict_activos[a].VaR)}</td>
+                      <td>{formatEUR(data.dict_activos[a].EaR)}</td>
+                      <td>{formatEUR(data.dict_activos[a].ESF)}</td>
+                      <td>{data.dict_activos[a].RatioEaRVaRPct?.toFixed(2)}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
 
-          <table>
-            <thead>
-              <tr>
-                <th>{t[lang].asset}</th>
-                <th>{t[lang].individualVar}</th>
-                <th>{t[lang].absContribution}</th>
-                <th>{t[lang].pctContribution}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Object.keys(data.contribucionVaR || {}).map(a => (
-                <tr key={a}>
-                  <td>{a}</td>
-                  <td>{formatEUR(data.contribucionVaR[a].VaRIndividual)}</td>
-                  <td>{formatEUR(data.contribucionVaR[a].ContribucionAbs)}</td>
-                  <td>{data.contribucionVaR[a].ContribucionPct?.toFixed(2)}%</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+              <h3>{t[lang].contribution}</h3>
 
-          <h3>{t[lang].distribution}</h3>
+              <table>
+                <thead>
+                  <tr>
+                    <th>{t[lang].asset}</th>
+                    <th>{t[lang].individualVar}</th>
+                    <th>{t[lang].absContribution}</th>
+                    <th>{t[lang].pctContribution}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Object.keys(data.contribucionVaR || {}).map(a => (
+                    <tr key={a}>
+                      <td>{a}</td>
+                      <td>{formatEUR(data.contribucionVaR[a].VaRIndividual)}</td>
+                      <td>{formatEUR(data.contribucionVaR[a].ContribucionAbs)}</td>
+                      <td>{data.contribucionVaR[a].ContribucionPct?.toFixed(2)}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
 
-          <div className="legend">
-            <span className="dot var"></span> {t[lang].varBar}
-            <span className="dot ear"></span> {t[lang].earBar}
-          </div>
+              <h3>{t[lang].distribution}</h3>
 
-          <div className="chart">
-            {chartData ? (
-              <Chart
-                type="bar"
-                data={{
-                  ...chartData,
-                  datasets: [
-                    {
-                      ...chartData.datasets[0],
-                      label: t[lang].frequency
-                    },
-                    {
-                      ...chartData.datasets[1],
-                      label: t[lang].fittedNormal
-                    }
-                  ]
-                }}
-                options={{
-                  responsive: true,
-                  interaction: {
-                    mode: "index",
-                    intersect: false
-                  },
-                  plugins: {
-                    legend: {
-                      display: true
-                    },
-                    tooltip: {
-                      callbacks: {
-                        title: context =>
-                          `${t[lang].simulatedResultTooltip}: ${Number(
-                            context[0].label
-                          ).toFixed(2)} €`,
-                        label: context =>
-                          `${context.dataset.label}: ${Number(
-                            context.raw
-                          ).toFixed(2)}`
-                      }
-                    }
-                  },
-                  scales: {
-                    x: {
-                      ticks: {
-                        maxRotation: 90,
-                        minRotation: 90,
-                        autoSkip: true,
-                        maxTicksLimit: 15,
-                        callback: function(value) {
-                          return Number(this.getLabelForValue(value)).toFixed(2);
+              <div className="legend">
+                <span className="dot var"></span> {t[lang].varBar}
+                <span className="dot ear"></span> {t[lang].earBar}
+              </div>
+
+              <div className="chart">
+                {chartData ? (
+                  <Chart
+                    type="bar"
+                    data={{
+                      ...chartData,
+                      datasets: [
+                        { ...chartData.datasets[0], label: t[lang].frequency },
+                        { ...chartData.datasets[1], label: t[lang].fittedNormal }
+                      ]
+                    }}
+                    options={{
+                      responsive: true,
+                      interaction: { mode: "index", intersect: false },
+                      plugins: {
+                        legend: { display: true },
+                        tooltip: {
+                          callbacks: {
+                            title: context =>
+                              `${t[lang].simulatedResultTooltip}: ${Number(
+                                context[0].label
+                              ).toFixed(2)} €`,
+                            label: context =>
+                              `${context.dataset.label}: ${Number(
+                                context.raw
+                              ).toFixed(2)}`
+                          }
                         }
                       },
-                      title: {
-                        display: true,
-                        text: t[lang].simulatedResult
+                      scales: {
+                        x: {
+                          ticks: {
+                            maxRotation: 90,
+                            minRotation: 90,
+                            autoSkip: true,
+                            maxTicksLimit: 15,
+                            callback: function(value) {
+                              return Number(this.getLabelForValue(value)).toFixed(2);
+                            }
+                          },
+                          title: { display: true, text: t[lang].simulatedResult }
+                        },
+                        y: {
+                          title: { display: true, text: t[lang].frequency }
+                        }
                       }
-                    },
-                    y: {
-                      title: {
-                        display: true,
-                        text: t[lang].frequency
-                      }
-                    }
-                  }
-                }}
-              />
-            ) : (
-              <p>{t[lang].noHistogram}</p>
-            )}
-          </div>
-        </section>
+                    }}
+                  />
+                ) : (
+                  <p>{t[lang].noHistogram}</p>
+                )}
+              </div>
+            </section>
+          )}
+        </>
+      )}
+
+      {activeTab === "optimization" && (
+        <OptimizationPanel sourceFile={sourceFile} lang={lang} />
       )}
 
       <footer className="footer">
