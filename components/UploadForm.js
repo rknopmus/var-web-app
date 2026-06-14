@@ -1,6 +1,11 @@
 import { useState } from "react";
 
-export default function UploadForm({ setData, setError, lang = "es" }) {
+export default function UploadForm({
+  setData,
+  setError,
+  setSourceFile,
+  lang = "es"
+}) {
   const txt = {
     es: {
       code: "Código de acceso",
@@ -11,7 +16,9 @@ export default function UploadForm({ setData, setError, lang = "es" }) {
       normal: "Paramétrico Normal",
       calculate: "Calcular VaR",
       fileError: "Debes subir un archivo Excel.",
-      varError: "Error calculando VaR."
+      varError: "Error calculando VaR.",
+      selectFile: "Seleccionar archivo",
+      noFile: "Ningún archivo seleccionado"
     },
     en: {
       code: "Access code",
@@ -22,7 +29,9 @@ export default function UploadForm({ setData, setError, lang = "es" }) {
       normal: "Parametric Normal",
       calculate: "Calculate VaR",
       fileError: "You must upload an Excel file.",
-      varError: "Error calculating VaR."
+      varError: "Error calculating VaR.",
+      selectFile: "Select file",
+      noFile: "No file selected"
     }
   };
 
@@ -30,6 +39,12 @@ export default function UploadForm({ setData, setError, lang = "es" }) {
   const [code, setCode] = useState("");
   const [alpha, setAlpha] = useState("0.95");
   const [method, setMethod] = useState("historical");
+
+  const handleFileChange = e => {
+    const selected = e.target.files?.[0] || null;
+    setFile(selected);
+    if (setSourceFile) setSourceFile(selected);
+  };
 
   const handleSubmit = async () => {
     setError("");
@@ -71,25 +86,23 @@ export default function UploadForm({ setData, setError, lang = "es" }) {
       />
 
       <label>{txt[lang].file}</label>
+
       <input
-  id="excel-upload"
-  type="file"
-  accept=".xlsx,.xls"
-  style={{ display: "none" }}
-  onChange={e => setFile(e.target.files[0])}
-/>
+        id="excel-upload"
+        type="file"
+        accept=".xlsx,.xls"
+        style={{ display: "none" }}
+        onChange={handleFileChange}
+      />
 
-<label htmlFor="excel-upload" className="customFileButton">
-  {lang === "es" ? "Seleccionar archivo" : "Select file"}
-</label>
+      <label htmlFor="excel-upload" className="customFileButton">
+        {txt[lang].selectFile}
+      </label>
 
-<span className="fileName">
-  {file
-    ? file.name
-    : lang === "es"
-    ? "Ningún archivo seleccionado"
-    : "No file selected"}
-</span>
+      <span className="fileName">
+        {file ? file.name : txt[lang].noFile}
+      </span>
+
       <label>{txt[lang].percentile}</label>
       <select value={alpha} onChange={e => setAlpha(e.target.value)}>
         <option value="0.90">90%</option>
