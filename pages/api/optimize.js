@@ -1,5 +1,4 @@
 import * as XLSX from "xlsx";
-
 export const config = {
   api: {
     bodyParser: false
