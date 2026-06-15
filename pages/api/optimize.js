@@ -25,6 +25,19 @@ function std(values) {
   );
 }
 
+function quantile(values, q) {
+  const sorted = [...values].sort((a, b) => a - b);
+  const pos = (sorted.length - 1) * q;
+  const base = Math.floor(pos);
+  const rest = pos - base;
+
+  if (sorted[base + 1] !== undefined) {
+    return sorted[base] + rest * (sorted[base + 1] - sorted[base]);
+  }
+
+  return sorted[base];
+}
+
 function maxDrawdown(returns) {
   let wealth = 1;
   let peak = 1;
@@ -43,31 +56,11 @@ function covariance(a, b) {
   if (!a || !b || a.length !== b.length || a.length < 2) return null;
   const ma = mean(a);
   const mb = mean(b);
+
   return (
     a.reduce((acc, x, i) => acc + (x - ma) * (b[i] - mb), 0) /
     (a.length - 1)
   );
-}
-
-function quantile(values, q) {
-  const sorted = [...values].sort((a, b) => a - b);
-  const pos = (sorted.length - 1) * q;
-  const base = Math.floor(pos);
-  const rest = pos - base;
-
-  if (sorted[base + 1] !== undefined) {
-    return sorted[base] + rest * (sorted[base + 1] - sorted[base]);
-  }
-
-  return sorted[base];
-}
-
-function normalize(value, min, max, reverse = false) {
-  if (value === null || value === undefined || !isFinite(value)) return 0.5;
-  if (max === min) return 0.5;
-  const z = (value - min) / (max - min);
-  const clipped = Math.max(0, Math.min(1, z));
-  return reverse ? 1 - clipped : clipped;
 }
 
 function parseWorkbook(workbook) {
@@ -103,9 +96,15 @@ function parseWorkbook(workbook) {
   const posiciones = {};
 
   posicionesRaw.forEach(p => {
-    const activo = p.Activo ?? p.ACTIVO ?? p.activo ?? p["Activo"] ?? p["ACTIVO"];
+    const activo =
+      p.Activo ?? p.ACTIVO ?? p.activo ?? p["Activo"] ?? p["ACTIVO"];
+
     const posicion =
-      p.Posicion ?? p.POSICION ?? p.posicion ?? p["Posición"] ?? p["POSICIÓN"];
+      p.Posicion ??
+      p.POSICION ??
+      p.posicion ??
+      p["Posición"] ??
+      p["POSICIÓN"];
 
     if (activo !== undefined && posicion !== undefined) {
       posiciones[String(activo).trim()] = toNumber(posicion);
@@ -113,6 +112,98 @@ function parseWorkbook(workbook) {
   });
 
   return { precios, posiciones };
+}
+
+function normalizeWeights(weights, minWeight, maxWeight) {
+  let clipped = weights.map(w =>
+    Math.max(minWeight, Math.min(maxWeight, w))
+  );
+
+  const sum = clipped.reduce((a, b) => a + b, 0);
+
+  if (sum === 0) {
+    return clipped.map(() => 1 / clipped.length);
+  }
+
+  return clipped.map(w => w / sum);
+}
+
+function randomWeights(n, minWeight, maxWeight) {
+  const raw = Array.from({ length: n }, () => Math.random());
+  const sum = raw.reduce((a, b) => a + b, 0);
+  return normalizeWeights(raw.map(x => x / sum), minWeight, maxWeight);
+}
+
+function evaluatePortfolio({
+  weights,
+  returnsMatrix,
+  riskFreeRate,
+  alpha,
+  currentTotalValue
+}) {
+  const portfolioReturns = returnsMatrix.map(row =>
+    row.reduce((acc, r, i) => acc + weights[i] * r, 0)
+  );
+
+  const portfolioPnL = portfolioReturns.map(r => r * currentTotalValue);
+
+  const VaR = quantile(portfolioPnL, 1 - alpha);
+  const EaR = quantile(portfolioPnL, alpha);
+
+  const negativeTail = portfolioPnL.filter(x => x < VaR);
+  const positiveTail = portfolioPnL.filter(x => x > EaR);
+
+  const ESFMinus = negativeTail.length > 0 ? mean(negativeTail) : null;
+  const ESFPlus = positiveTail.length > 0 ? mean(positiveTail) : null;
+
+  const annualReturn = mean(portfolioReturns) * 252;
+  const annualVolatility = std(portfolioReturns) * Math.sqrt(252);
+
+  const downsideReturns = portfolioReturns.filter(x => x < 0);
+  const downsideVolatility =
+    downsideReturns.length > 1 ? std(downsideReturns) * Math.sqrt(252) : null;
+
+  const Sharpe =
+    annualVolatility && annualVolatility !== 0
+      ? (annualReturn - riskFreeRate) / annualVolatility
+      : null;
+
+  const Sortino =
+    downsideVolatility && downsideVolatility !== 0
+      ? (annualReturn - riskFreeRate) / downsideVolatility
+      : null;
+
+  const MaxDrawdown = maxDrawdown(portfolioReturns);
+
+  const RatioEaRVaR =
+    VaR !== 0 && VaR !== null ? Math.abs(EaR / VaR) : null;
+
+  const RatioESF =
+    ESFMinus !== 0 && ESFMinus !== null
+      ? Math.abs(ESFPlus / ESFMinus)
+      : null;
+
+  const score =
+    0.45 * (RatioEaRVaR || 0) +
+    0.35 * (RatioESF || 0) +
+    0.20 * (Sharpe || 0);
+
+  return {
+    portfolioReturns,
+    portfolioPnL,
+    VaR,
+    EaR,
+    ESFMinus,
+    ESFPlus,
+    RatioEaRVaR,
+    RatioESF,
+    annualReturn,
+    annualVolatility,
+    Sharpe,
+    Sortino,
+    MaxDrawdown,
+    score
+  };
 }
 
 export default async function handler(req, res) {
@@ -140,7 +231,6 @@ export default async function handler(req, res) {
     const maxWeight = toNumber(req.headers["x-max-weight"]) / 100;
     const riskFreeRate = toNumber(req.headers["x-risk-free-rate"]) / 100;
     const benchmarkName = String(req.headers["x-benchmark"] || "").trim();
-    const allowCash = String(req.headers["x-allow-cash"] || "yes") === "yes";
 
     const buffers = [];
     for await (const chunk of req) buffers.push(chunk);
@@ -149,13 +239,6 @@ export default async function handler(req, res) {
     const { precios, posiciones } = parseWorkbook(workbook);
 
     const activos = Object.keys(posiciones).filter(a => isFinite(posiciones[a]));
-
-    if (precios.length < 3 || activos.length === 0) {
-      return res.status(400).json({
-        error: "No hay datos suficientes para optimizar."
-      });
-    }
-
     const columnas = Object.keys(precios[0] || {});
 
     function findColumn(asset) {
@@ -164,6 +247,7 @@ export default async function handler(req, res) {
       );
     }
 
+    const validAssets = [];
     const returnsByAsset = {};
     const lastPrices = {};
     const currentValues = {};
@@ -183,13 +267,73 @@ export default async function handler(req, res) {
         }
       }
 
-      returnsByAsset[a] = r;
-      lastPrices[a] = toNumber(precios[precios.length - 1][col]);
-      currentValues[a] = posiciones[a] * lastPrices[a];
+      if (r.length > 2) {
+        validAssets.push(a);
+        returnsByAsset[a] = r;
+        lastPrices[a] = toNumber(precios[precios.length - 1][col]);
+        currentValues[a] = posiciones[a] * lastPrices[a];
+      }
     });
 
-    const validAssets = activos.filter(a => returnsByAsset[a]?.length > 2);
-    const totalValue = validAssets.reduce((acc, a) => acc + currentValues[a], 0);
+    if (validAssets.length === 0) {
+      return res.status(400).json({
+        error: "No hay activos válidos para optimizar."
+      });
+    }
+
+    const minLen = Math.min(...validAssets.map(a => returnsByAsset[a].length));
+
+    const returnsMatrix = Array.from({ length: minLen }, (_, i) =>
+      validAssets.map(a => returnsByAsset[a][returnsByAsset[a].length - minLen + i])
+    );
+
+    const currentTotalValue = validAssets.reduce(
+      (acc, a) => acc + currentValues[a],
+      0
+    );
+
+    const currentWeights = validAssets.map(a =>
+      currentTotalValue !== 0 ? currentValues[a] / currentTotalValue : 0
+    );
+
+    const currentPortfolio = evaluatePortfolio({
+      weights: currentWeights,
+      returnsMatrix,
+      riskFreeRate,
+      alpha: 0.95,
+      currentTotalValue
+    });
+
+    const iterations =
+      profile === "conservative"
+        ? 6000
+        : profile === "aggressive"
+        ? 9000
+        : 7500;
+
+    let bestWeights = currentWeights;
+    let bestEvaluation = currentPortfolio;
+
+    for (let i = 0; i < iterations; i++) {
+      const candidateWeights = randomWeights(
+        validAssets.length,
+        minWeight || 0,
+        maxWeight || 1
+      );
+
+      const evaluation = evaluatePortfolio({
+        weights: candidateWeights,
+        returnsMatrix,
+        riskFreeRate,
+        alpha: 0.95,
+        currentTotalValue
+      });
+
+      if (evaluation.score > bestEvaluation.score) {
+        bestWeights = candidateWeights;
+        bestEvaluation = evaluation;
+      }
+    }
 
     let benchmarkReturns = null;
 
@@ -197,167 +341,116 @@ export default async function handler(req, res) {
       const bCol = findColumn(benchmarkName);
       if (bCol) {
         benchmarkReturns = [];
+
         for (let i = 1; i < precios.length; i++) {
           const p0 = toNumber(precios[i - 1][bCol]);
           const p1 = toNumber(precios[i][bCol]);
+
           if (isFinite(p0) && isFinite(p1) && p0 > 0 && p1 > 0) {
             benchmarkReturns.push(Math.log(p1 / p0));
           }
         }
+
+        benchmarkReturns = benchmarkReturns.slice(-minLen);
       }
     }
 
-    const metrics = validAssets.map(a => {
-      const r = returnsByAsset[a];
-      const dailyMean = mean(r);
-      const dailyStd = std(r);
-      const downside = r.filter(x => x < 0);
-      const downsideStd = std(downside);
-
+    const recommendations = validAssets.map((asset, i) => {
+      const assetReturns = returnsByAsset[asset].slice(-minLen);
+      const dailyMean = mean(assetReturns);
+      const dailyStd = std(assetReturns);
       const annualReturn = dailyMean * 252;
-      const annualVol = dailyStd * Math.sqrt(252);
-      const annualDownside = downsideStd ? downsideStd * Math.sqrt(252) : null;
+      const annualVolatility = dailyStd * Math.sqrt(252);
 
-      const sharpe =
-        annualVol && annualVol !== 0 ? (annualReturn - riskFreeRate) / annualVol : null;
+      const downside = assetReturns.filter(x => x < 0);
+      const downsideVol = downside.length > 1 ? std(downside) * Math.sqrt(252) : null;
 
-      const sortino =
-        annualDownside && annualDownside !== 0
-          ? (annualReturn - riskFreeRate) / annualDownside
+      const Sharpe =
+        annualVolatility && annualVolatility !== 0
+          ? (annualReturn - riskFreeRate) / annualVolatility
           : null;
 
-      const mdd = maxDrawdown(r);
+      const Sortino =
+        downsideVol && downsideVol !== 0
+          ? (annualReturn - riskFreeRate) / downsideVol
+          : null;
 
-      let informationRatio = null;
-      let treynor = null;
+      let InformationRatio = null;
+      let Treynor = null;
 
-      if (benchmarkReturns && benchmarkReturns.length === r.length) {
-        const activeReturns = r.map((x, i) => x - benchmarkReturns[i]);
+      if (benchmarkReturns && benchmarkReturns.length === assetReturns.length) {
+        const activeReturns = assetReturns.map((x, j) => x - benchmarkReturns[j]);
         const trackingError = std(activeReturns) * Math.sqrt(252);
-        informationRatio =
+
+        InformationRatio =
           trackingError && trackingError !== 0
             ? (mean(activeReturns) * 252) / trackingError
             : null;
 
         const beta =
-          covariance(r, benchmarkReturns) / Math.pow(std(benchmarkReturns), 2);
+          covariance(assetReturns, benchmarkReturns) /
+          Math.pow(std(benchmarkReturns), 2);
 
-        treynor =
+        Treynor =
           beta && isFinite(beta) && beta !== 0
             ? (annualReturn - riskFreeRate) / beta
             : null;
       }
 
-      const currentWeight = totalValue !== 0 ? currentValues[a] / totalValue : 0;
-
-      const pnl = r.map(x => currentValues[a] * x);
-      const varAsset = quantile(pnl, 0.05);
-
-      return {
-        asset: a,
-        currentWeight,
-        MeanReturnAnnual: annualReturn,
-        VolatilityAnnual: annualVol,
-        Sharpe: sharpe,
-        Sortino: sortino,
-        MaxDrawdown: mdd,
-        InformationRatio: informationRatio,
-        Treynor: treynor,
-        VaRContributionProxy: Math.abs(varAsset || 0)
-      };
-    });
-
-    const ranges = {
-      sharpe: [Math.min(...metrics.map(x => x.Sharpe ?? 0)), Math.max(...metrics.map(x => x.Sharpe ?? 0))],
-      sortino: [Math.min(...metrics.map(x => x.Sortino ?? 0)), Math.max(...metrics.map(x => x.Sortino ?? 0))],
-      vol: [Math.min(...metrics.map(x => x.VolatilityAnnual ?? 0)), Math.max(...metrics.map(x => x.VolatilityAnnual ?? 0))],
-      dd: [Math.min(...metrics.map(x => x.MaxDrawdown ?? 0)), Math.max(...metrics.map(x => x.MaxDrawdown ?? 0))],
-      varc: [Math.min(...metrics.map(x => x.VaRContributionProxy ?? 0)), Math.max(...metrics.map(x => x.VaRContributionProxy ?? 0))]
-    };
-
-    const weights =
-      profile === "conservative"
-        ? { ret: 0.2, risk: 0.8 }
-        : profile === "aggressive"
-        ? { ret: 0.7, risk: 0.3 }
-        : { ret: 0.5, risk: 0.5 };
-
-    const scored = metrics.map(m => {
-      const returnScore =
-        0.65 * normalize(m.Sharpe, ranges.sharpe[0], ranges.sharpe[1]) +
-        0.35 * normalize(m.Sortino, ranges.sortino[0], ranges.sortino[1]);
-
-      const riskScore =
-        0.35 * normalize(m.VolatilityAnnual, ranges.vol[0], ranges.vol[1], true) +
-        0.35 * normalize(Math.abs(m.MaxDrawdown), 0, Math.max(...metrics.map(x => Math.abs(x.MaxDrawdown || 0))), true) +
-        0.30 * normalize(m.VaRContributionProxy, ranges.varc[0], ranges.varc[1], true);
-
-      return {
-        ...m,
-        score: weights.ret * returnScore + weights.risk * riskScore
-      };
-    });
-
-    let scoreSum = scored.reduce((acc, x) => acc + Math.max(0.0001, x.score), 0);
-
-    let rawWeights = scored.map(x => ({
-      asset: x.asset,
-      weight: Math.max(0.0001, x.score) / scoreSum
-    }));
-
-    rawWeights = rawWeights.map(x => ({
-      ...x,
-      weight: Math.max(minWeight || 0, Math.min(maxWeight || 1, x.weight))
-    }));
-
-    const adjustedSum = rawWeights.reduce((acc, x) => acc + x.weight, 0);
-
-    let finalWeights = rawWeights.map(x => ({
-      ...x,
-      weight: x.weight / adjustedSum
-    }));
-
-    if (!allowCash) {
-      const sum = finalWeights.reduce((acc, x) => acc + x.weight, 0);
-      finalWeights = finalWeights.map(x => ({ ...x, weight: x.weight / sum }));
-    }
-
-    const totalVarProxy = scored.reduce((acc, x) => acc + x.VaRContributionProxy, 0);
-
-    const recommendations = scored.map(m => {
-      const rec = finalWeights.find(x => x.asset === m.asset);
-      const recommendedWeight = rec ? rec.weight : m.currentWeight;
-      const change = recommendedWeight - m.currentWeight;
+      const change = bestWeights[i] - currentWeights[i];
 
       let rationale = "Mantener";
       if (change < -0.01) {
         rationale =
-          "Reducir: elevada contribución al riesgo o menor eficiencia riesgo-rentabilidad.";
+          "Reducir: mejora el score de cartera al reducir asimetría negativa, VaR o drawdown.";
       } else if (change > 0.01) {
         rationale =
-          "Aumentar: mejor combinación de rentabilidad, riesgo y drawdown.";
+          "Aumentar: mejora el score conjunto EaR/VaR, ESF+/ESF- y Sharpe.";
       }
 
       return {
-        asset: m.asset,
-        currentWeightPct: m.currentWeight * 100,
-        recommendedWeightPct: recommendedWeight * 100,
+        asset,
+        currentWeightPct: currentWeights[i] * 100,
+        recommendedWeightPct: bestWeights[i] * 100,
         changePct: change * 100,
-        MeanReturnAnnualPct: m.MeanReturnAnnual * 100,
-        VolatilityAnnualPct: m.VolatilityAnnual * 100,
-        Sharpe: m.Sharpe,
-        Sortino: m.Sortino,
-        MaxDrawdownPct: m.MaxDrawdown * 100,
-        InformationRatio: m.InformationRatio,
-        Treynor: m.Treynor,
-        VaRContributionPct:
-          totalVarProxy !== 0 ? (m.VaRContributionProxy / totalVarProxy) * 100 : null,
+        MeanReturnAnnualPct: annualReturn * 100,
+        VolatilityAnnualPct: annualVolatility * 100,
+        Sharpe,
+        Sortino,
+        MaxDrawdownPct: maxDrawdown(assetReturns) * 100,
+        InformationRatio,
+        Treynor,
+        VaRContributionPct: null,
         rationale
       };
     });
 
     return res.status(200).json({
       profile,
+      objective:
+        "Maximize 45% EaR/VaR + 35% ESF+/ESF- + 20% portfolio Sharpe",
+      currentPortfolio: {
+        RatioEaRVaR: currentPortfolio.RatioEaRVaR,
+        RatioESF: currentPortfolio.RatioESF,
+        Sharpe: currentPortfolio.Sharpe,
+        VaR: currentPortfolio.VaR,
+        EaR: currentPortfolio.EaR,
+        ESFMinus: currentPortfolio.ESFMinus,
+        ESFPlus: currentPortfolio.ESFPlus,
+        MaxDrawdownPct: currentPortfolio.MaxDrawdown * 100,
+        Score: currentPortfolio.score
+      },
+      optimizedPortfolio: {
+        RatioEaRVaR: bestEvaluation.RatioEaRVaR,
+        RatioESF: bestEvaluation.RatioESF,
+        Sharpe: bestEvaluation.Sharpe,
+        VaR: bestEvaluation.VaR,
+        EaR: bestEvaluation.EaR,
+        ESFMinus: bestEvaluation.ESFMinus,
+        ESFPlus: bestEvaluation.ESFPlus,
+        MaxDrawdownPct: bestEvaluation.MaxDrawdown * 100,
+        Score: bestEvaluation.score
+      },
       recommendations
     });
   } catch (error) {
